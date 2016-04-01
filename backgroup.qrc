@@ -1,0 +1,24 @@
+<RCC>
+  <qresource>
+    <file>icon/exit_button.png</file>
+    <file>icon/save_button.png</file>
+    <file>icon/read_button.png</file>
+    <file>icon/exit_button.png</file>
+    <file>697fb82d65e13421c5eb68f706f9e558493acb6223863-wtpSUx_fw580.png</file>
+    <file>icon/start_button.png</file>
+    <file>pic1.jpeg</file>
+    <file>pic.png</file>
+    <file>ascii_dora.png</file>
+  </qresource>
+  <qresource prefix="icon">
+    <file>icon/read_button_han.png</file>
+    <file>icon/save_button_han.png</file>
+    <file>icon/start_button_han.png</file>
+    <file>icon/exit_button_han.png</file>
+    <file>icon/next_144px_1126438_easyicon.net.png</file>
+    <file>icon/filemanager_144px_1126240_easyicon.net.png</file>
+    <file>icon/fancy_144px_1126236_easyicon.net.png</file>
+    <file>icon/pause_144px_1126462_easyicon.net.png</file>
+    <file>icon/play_144px_1126481_easyicon.net.png</file>
+  </qresource>
+</RCC>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Project SYSTEM "Project-4.6.dtd">
 <!-- eric4 project file for project overtime -->
-<!-- Saved: 2016-03-27, 23:45:52 -->
+<!-- Saved: 2016-03-30, 23:39:52 -->
 <!-- Copyright (C) 2016 ,  -->
 <Project version="4.6">
   <Language>en</Language>
@@ -16,12 +16,14 @@
     <Source>classDate.py</Source>
     <Source>overtime.ui</Source>
     <Source>output_xls.py</Source>
+    <Source>backgroup_rc.py</Source>
   </Sources>
   <Forms>
   </Forms>
   <Translations>
   </Translations>
   <Resources>
+    <Resource>backgroup.qrc</Resource>
   </Resources>
   <Interfaces>
   </Interfaces>
