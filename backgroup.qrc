@@ -1,7 +1,11 @@
 <RCC>
   <qresource prefix="icon">
+    <file>liu.png</file>
+    <file>email.png</file>
+    <file>tu.jpg</file>
     <file>delete.png</file>
     <file>backgroup.jpg</file>
+    <file>gao_.png</file>
     <file>read_button_han.png</file>
     <file>save_button_han.png</file>
     <file>title.png</file>

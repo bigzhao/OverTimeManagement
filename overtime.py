@@ -1,10 +1,13 @@
-﻿## -*- coding:utf-8 -*-
+﻿# -*- coding:utf-8 -*-
 import sys
 import time
 from PyQt4 import QtCore, QtGui, uic
 import re
 import codecs
 import classDate
+from web_ui import httpWidget
+from PyQt4 import QtWebKit
+from browser import Ui_HttpWidget
 #import Ui_login
 qtCreatorFile = "overtime.ui" # Enter file here.
 Ui_MainWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
@@ -24,7 +27,13 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
 
+
+
 class Ui_Dialog(object):
+    '''
+    登陆验证框，用户需输入工号即可在id.txt文件中找到对应的名字部门
+    错误会提示“错误工号”
+    '''
     def setupUi(self, Dialog):
         self.id=''
         self.depart=''
@@ -84,22 +93,12 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
         QtGui.QMainWindow.__init__(self)
         Ui_MainWindow.__init__(self)
         self.setupUi(self)
-#        self.getTime()
         self.startButton.clicked.connect(self.startCount)
-#        self.stopButton.clicked.connect(self.stopCount)
         self.deleteButton.clicked.connect(self.deleteLast)
         self.readButton.clicked.connect(self.readCount)
         self.xlsButton.clicked.connect(self.makeXls)
-       
-#    def getTime(self):
-#        localtime=time.localtime(time.time())
-#        self.year=localtime[0]
-#        self.month=localtime[1]
-#        self.day=localtime[2]
-#        self.wday=localtime[6]+1
-#        if  self.day==1:
-#            timeOfMonth=0
-#        return
+        self.changeButton.clicked.connect(self.changeFun)
+
     def startCount(self):     #按下start时调用的函数
         #查看选项,奋斗者，加班，调休，午休时间
         fighter, money, rest, wuxiu=0, 0, 0, 0
@@ -114,7 +113,7 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
         week={u'星期一':0, u'星期二':1, u'星期三':2,u'星期四':3,u'星期五':4,u'星期六':5,u'星期日':6}
         thedate=self.calendarWidget.selectedDate()
         thedatestring= (thedate.toString("yyyy-MM-dd dddd"))
-       # print thedatestring[0:4], thedatestring[5:7],thedatestring[8:10], week[thedatestring[11:15]]
+        print (thedatestring[0:4], thedatestring[5:7],thedatestring[8:10], week[thedatestring[11:15]])
         self.timeobj.getTime(thedatestring[0:4],thedatestring[5:7],  thedatestring[8:10], week[thedatestring[11:15]])
         startHour=self.s_hourboBox.currentText()
         startMin=self.s_minboBox.currentText()
@@ -127,44 +126,15 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
             endTime=str(endHour)+':'+str(endMin)
             self.timeobj.setEndTime(endHour, endMin, endTime)
             #在显示中显示出来
-            regularTime=self.timeobj.countTime( (self.remarkEdit.toPlainText()), rest, money, fighter, wuxiu)  #将备注写入 将选项例如是否是奋斗者写进去并得到时间差
+            #将备注写入 将选项例如是否是奋斗者写进去并得到时间差
+            regularTime=self.timeobj.countTime( (self.remarkEdit.toPlainText()), rest, money, fighter, wuxiu) 
             self.output.setText(u'开始时间:'+startTime+'\n'+u'结束时间:'+endTime+'\n'+u'加班时间：'+regularTime)
-
+            self.readFun(0)
         else:
             QtGui.QMessageBox.critical(self,"Error",  u'输入错误，结束时间必须大于开始时间')
 
         return
 
-#    def getWeekendTime(self):
-#        weekendtime=0
-#        record=open(str(self.year)+'_'+str(self.month)+'.txt','r')
-#        text=str(record.read())
-#        pattern=re.compile('<wday:6|7.*?time:(.*?)remark:.*?>')
-#        time=re.findall(pattern,text )
-#        for i in time:
-#            weekendtime+=int(i)
-#        self.weedendTime=weekendtime
-#        return
-#    def getWorkdayTime(self):
-#        workdaytime=0
-#        self.getWeekendTIme()
-#        self.getSumTime()
-#        self.workTime=self.sumTime-self.weekendTime
-#    def endCount(self):              #按下end时调用的函数
-##        if self.on:
-#        self.on=0         #判断用户是否按下start再按end
-#   #     endTime=time.time()
-#        endTime=self.endboBox.currentText()
-#        self.timeobj.setEndTime(endTime)
-#     #   self.output.setText('endtime:'+str(time.asctime( time.localtime(self.startTime)) ))
-#     
-#        regularTime=self.timeobj.countTime( (self.remarkEdit.toPlainText()))  #将备注写入 并得到时间差
-#        self.output.setText(regularTime)
-#            
-#        else:
-#           QtGui.QMessageBox.critical(self,"Error",  u'操作错误 请先点击start')  
-
-#        return
     
     def deleteLast(self):
        #按下delete时调用的函数
@@ -180,40 +150,34 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
         #调用类的删除函数,并得到被删的文字
             deleteText=self.timeobj.deleteLastLine()
         #使用正则来找到时间人物并显示出来
+            if deleteText == 'nodate':
+                self.output.setText(u'没有数据可删了')
+                return
             pattern=re.compile('<.*?date:(.*?)start:(.*?)end:(.*?)time:.*?name:(.*?)depart:.*?>')
             items=re.findall(pattern,deleteText)
             # print(items[0])
             showText=u'删除记录\n<姓名：'+str(items[0][3])+','+u'日期：'+str(items[0][0])+','+u'时间：'+str(items[0][1])+'--'+str(items[0][2])+'>'
             self.output.setText(showText)
+            self.readFun(0)
         return
-#    oo
-#    def countTime(self):
-#        overTime=int(self.endTime-self.startTime)
-#        regularTime='Time:'+sec2time(overTime)
-#        self.output.setText(regularTime)
-#        remark= (self.remarkEdit.toPlainText())
-#        print remark
-#        record=codecs.open(str(self.year)+'_'+str(self.month)+'.txt','a+', 'utf-8')
-#        record.write('<wday:'+str(self.wday)+'year:'+str(self.year)+'month:'+str(self.month)+'day:'+str(self.day)+'time:'+str(overTime)+'remark:'+remark+'>')    #以@开��jia讲断 ￥结尾之后用正则来匹配 
-#        print 'succeed'
-#        record.close() 
-#       return
-#读取数据
+
+    #读取数据
     def readCount(self):
         if self.detialBox.isChecked():detial=1;
         else:detial = 0
-     #   print detial
-        week ={u'星期一':0, u'星期二':1, u'星期三':2,u'星期四':3,u'星期五':4,u'星期六':5,u'星期日':6}
+        a=self.readFun(detial)
+        self.output.setText(a)
+        return
+    def readFun(self,detial):
+        week = {u'星期一': 0, u'星期二': 1, u'星期三': 2, u'星期四': 3, u'星期五': 4, u'星期六': 5, u'星期日': 6}
         thedate = self.calendarWidget.selectedDate()
         thedatestring = (thedate.toString("yyyy-MM-dd dddd"))
-        self.timeobj.getTime(thedatestring[0:4],thedatestring[5:7],  thedatestring[8:10], week[thedatestring[11:15]])
+        self.timeobj.getTime(thedatestring[0:4], thedatestring[5:7], thedatestring[8:10],
+                                 week[thedatestring[11:15]])
         timeNow = time.localtime(time.time())
-        yearNow = timeNow[0]     #用来判断当前季度
+        yearNow = timeNow[0]  # 用来判断当前季度
         monthNow = timeNow[1]
-        # newItem = QtGui.QTableWidgetItem("松鼠")
-        # self.table.setItem(0, 0, newItem)
-        a,tups=self.timeobj.readHistory(detial,yearNow, monthNow )
-        # print('ok')
+        a, tups = self.timeobj.readHistory(detial, yearNow, monthNow)
         row = 0
         if 0 == detial:
             for tup in tups:
@@ -223,45 +187,37 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
                     self.table.setItem(row, col, anitem)
                     col += 1
                 row += 1
-            for i in range(row,32):
-                for col in range(0,5):
+            for i in range(row, 32):
+                for col in range(0, 5):
                     anitem = QtGui.QTableWidgetItem(' ')
                     self.table.setItem(row, col, anitem)
-
-            self.output.setText(a)
-        return
-        #做表格函数
-    def makeXls(self):
-        fileName = QtGui.QFileDialog.getSaveFileName(self,  ("Save File"),"/home/tdz/untitled.xls",("*.xls"));
-        xls_year=str(self.yearspinBox.value())
-        xls_month=self.monthspinBox.value()
-        if xls_month<10:xls_month='0'+str(xls_month)
-        else:xls_month=str(xls_month)
-        openfilName=xls_year+'_'+xls_month+'.txt'
-   #     print openfilName
+            return a
+        return ''
         
+    def makeXls(self):
+        '''
+        做表格函数,调用时间类的导出exl方法
+        '''
+        thedate = self.calendarWidget.selectedDate()
+        thedatestring = (thedate.toString("yyyy-MM-dd dddd"))
+        openfilName=thedatestring[0:4]+'_'+thedatestring[5:7]+'.txt'
+        fileName = QtGui.QFileDialog.getSaveFileName(self,  ("Save File"),thedatestring[0:4]+'_'+thedatestring[5:7]+".xls",("*.xls"));
         if fileName:
             if self.timeobj.makeExcel(fileName, openfilName): QtGui.QMessageBox.critical(self,"Error",  u'数据不存在，无法导出')  
         return
-        #将登陆的id和姓名写进去 ，为后期写入文件做准备  
     def writeMess(self, id, name, depart):
+        '''
+        三个变量分别来自登陆框匹配id.txt,将登陆的id和姓名写进去 ，为后期写入文件做准备
+        '''
         self.timeobj.writeId( (id))
         self.timeobj.writeName( (name))
         self.timeobj.writeDepart( (depart))
         return
-#        
-#           pattern=re.compile('<wday.*?day:'+str(self.day)+'.*?time:(.*?)remark.*?>', re.S) 
-#           time=re.findall(pattern, text)#找出当   天加班时间 返回l一个列表   todayTime, sumTime
-#           todayTime=0
-#           for i in time:
-#                 todayTime+=int(i)
-#           a=str(self.month)+u'月加班时:'+str(self.sumTime)+u'秒'+u'今天加班时：'+str(todayTime)+u'秒'
-#           self.output.setText(a)
-#           record.close()
-#        else:
-#           self.output.setText('no data')
-#        return
 
+    def changeFun(self):
+        webapp = httpWidget()
+        webapp.show()
+        webapp.exec_()
 
 
 
@@ -270,9 +226,7 @@ if __name__ == "__main__":
     Dialog = QtGui.QDialog()
     ui = Ui_Dialog()
     ui.setupUi(Dialog)
- #   Dialog.show()
     if Dialog.exec_():
-    #    print ui.getMess()
         id, name, depart=ui.getMess()
         window = MyApp()
         window.show()

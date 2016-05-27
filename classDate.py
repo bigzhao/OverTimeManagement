@@ -9,9 +9,11 @@ import numpy as np
 from pylab import *
 import matplotlib.pyplot as plt
 import matplotlib.backends.backend_tkagg
-# from tkinter import *
 
-def sec2time(iItv):                     #转换将秒变成时分秒
+def sec2time(iItv):                     
+    '''
+	转换将秒变成时分秒,输入秒数iItv
+	'''
     if type(iItv)==type(1):
         h=(iItv/3600)
         sUp_h=iItv-3600*h
@@ -21,8 +23,15 @@ def sec2time(iItv):                     #转换将秒变成时分秒
         return ":".join(map(str,(h,m,s)))
     else:
         return "[InModuleError]:itv2time(iItv) invalid argument type"
-#计算本季度奋斗者加班时间
+
 def readSeason(y, m, term):
+    '''
+	计算本季度奋斗者加班时间，传入变量如下：
+	y：年
+	m：月
+	term：标志位 标志月份是个位数还是两位数，\
+	个位数则在月份前加0(文件读取需要)
+	'''
     fightTime,moneyTime,restTime=0,0,0
     while term:
         if m<10:filename=str(y)+'_'+'0'+str(m)+'.txt'
@@ -40,11 +49,42 @@ def readSeason(y, m, term):
             file.close()
         term-=1
         m=1
-        
-        # print (fightTime)
     return moneyTime,restTime,fightTime
     
 class date:
+    '''
+	加班时间类
+	定义变量 {
+	    self.year： 年
+        self.month ：月
+        self.day： 日
+        self.wday：星期几
+        self.startTime： 开始时间
+        self.startSecond： 开始时间转化成秒数
+        self.endTime： 结束时间
+        self.endSecond： 结束时间转化成秒
+        self.sumTime： 总时间
+        self.weekendTime： 周末加班时间
+        self.workdayTime： 工作日加班时间
+        self.id： 工号
+        self.name： 名字
+        self.depart： 部门
+	}
+	定义的方法{
+	__init__（）无传入变量
+	getTime 其实是setTime...懒得改了
+	setStartTime 顾名思义啦
+	setEndTime 顾名思义啦
+	getWeekendTime 计算周末加班时间
+	getWorkdayTime 计算工作日加班时间
+	getSumTime 总时间
+	getTimeOfMonth 计算月总时间
+	show 图表显示函数
+	readHistory 阅读季度加班函数
+	countTime：计算加班时
+	makeExcel: 导出图表
+	}
+	'''
     def __init__(self):
         self.year=2016
         self.month=3
@@ -55,30 +95,22 @@ class date:
         self.endTime=''
         self.endSecond=0
         self.sumTime=0
-#        self.getTime()
         self.weekendTime=0
         self.workdayTime=0
         self.id=''
         self.name=''
         self.depart=''
     def getTime(self, year, month, day, wday):
-       # localtime=time.localtime(time.time())
         self.year=year
         self.month=month
         self.day=day
         self.wday=wday
-#        if  self.day==1:
-#            timeOfMonth=0
         return
     def setStartTime(self, startHour, startMin,starttime):
         self.startTime=starttime
-#        start=time.asctime( time.localtime(starttime) ).split()#提取开始标准时间
         s_hour=int(startHour)
         s_min=int(startMin)
-    #    self.startTime=str(s_hour)+':'+str(s_min)
         self.startSecond=3600*s_hour+60*s_min
-        # print (self.startTime)
-
         return
     def setEndTime(self,  endHour, endMin, endtime):
         self.endTime=endtime
@@ -101,7 +133,7 @@ class date:
         for i in time:
             weekendtime+=float(i)
         self.weekendTime=weekendtime
-        return
+        return 
     def getWorkdayTime(self):
         workdaytime=0
         self.getWeekendTime()
@@ -177,9 +209,12 @@ class date:
         a=''
         tup8=()
       #     print items
-        record=open(str(self.year)+'_'+str(self.month)+'.txt','r',)
-        text=record.read()
-        record.close()
+        try:
+            record=open(str(self.year)+'_'+str(self.month)+'.txt','r',)
+            text=record.read()
+            record.close()
+        except:
+            text=''
         if detial:
             day,t=self.getTimeOfMonth(yearNow,monthNow)
             if monthNow <= 3:
@@ -194,13 +229,19 @@ class date:
             self.show(day,t,list(SeasonTime))
         else:
             if text:
-                pattern=re.compile('<wday.*?date:'+str(self.year)+'-'+str(self.month)+'-'+str(self.day)+'.*?time:(.*?)money.*?fighter:(.*?)remark:.*?>', re.S)
+                pattern=re.compile(r'<wday.*?money:(.*?)food:.*?rest:(.*?)fighter:(.*?)remark:.*?>', re.S)
                 time=re.findall(pattern, text)#找出当   天加班时间 返回l一个列表   todayTime, sumTime,fighter 还找寻奋斗者时间
                 #求出今天加班时，求出奋斗者加班时
-                todayTime, fighterTime=0, 0
+                todayTime, fighterTime,moneyTime,restTime=0, 0, 0,0
+                # print(time)
                 for i in time:
-                    todayTime+=float(i[0])
-                    fighterTime+=float(i[1])
+                    moneyTime+=float(i[0])
+                    restTime+=float(i[1])
+                    fighterTime+=float(i[2])
+                pattern1=re.compile(r'<wday.*?date:'+str(self.year)+'-'+str(self.month)+'-'+str(self.day)+'.*?time:(.*?)money:.*?>', re.S)
+                todayTime=re.findall(pattern1,text)
+                if todayTime:todayTime=todayTime[0]
+                else :todayTime=0
                 if monthNow<=3:
                     fighttimeOfSeason=readSeason(yearNow, monthNow)[2]
                 elif monthNow<=6:
@@ -213,12 +254,7 @@ class date:
                 self.getWeekendTime()
                 self.getWorkdayTime()
                 self.getSumTime()
-                a=str(self.month)+u'月加班:'+str(self.sumTime)+u'小时\n'+u'今天加班：'+str(todayTime)+u'小时\n'+u'至今为止，奋斗者加班时为'+str(fighterTime)+u'小时\n'+u'本季度奋斗者加班时为'+str(fighttimeOfSeason)+u'小时\n'+u'周末加班时：'+str(self.weekendTime)+u'小时\n'+u'工作日加班时：'+str(self.workdayTime)+u'小时'
-      #          print('ok')
-                #   if detial:
-            #      a=str(self.month)+u'月加班:'+str(self.sumTime)+u'小时\n'+u'今天加班：'+str(todayTime)+u'小时\n'+u'本月奋斗者加班时为'+str(fighterTime)+u'小时\n'+u'本月奋斗者加班时为'+str(fighttimeOfSeason)+u'小时\n'+u'周末加班时：'+str(self.weekendTime)+u'小时'+u'工作日加班时：'+str(self.workdayTime)+u'小时'
-            #   else :
-#           self.output.setText(a)
+                a=str(self.month)+u'月加班:'+str(self.sumTime)+u'小时\n'+u'今天加班：'+str(todayTime)+u'小时\n'+u'至今为止，奋斗者加班时为'+str(fighterTime)+u'小时,'+u'本月累计调休为'+str(restTime)+u'小时,'+u'本月累计加班费为'+str(moneyTime*25)+u'元\n'+u'本季度奋斗者加班时为'+str(fighttimeOfSeason)+u'小时\n'+u'周末加班时：'+str(self.weekendTime)+u'小时\n'+u'工作日加班时：'+str(self.workdayTime)+u'小时'
                 # 找出姓名、日期、时间、开始、结束
                 pattern = re.compile('<wday.*?date:(.*?)start:(.*?)end:(.*?)time:(.*?)money.*?remark:.*?name:(.*?)depart:.*?>', re.S)
                 tup=re.findall(pattern,text)
@@ -232,21 +268,10 @@ class date:
     def countTime(self, remark, rest, money, fighter, wuxiu):
         #判断是否包含午休时间
         if wuxiu:
-            overTime=(self.endSecond-self.startSecond)/3600.0 - 1
+            overTime=(self.endSecond-self.startSecond)/3600.0 - 1.5
         else:
             overTime=(self.endSecond-self.startSecond)/3600.0
-#        regularTime=sec2time(overTime)
         record=open(str(self.year)+'_'+str(self.month)+'.txt','a+')
-#        start=time.asctime( time.localtime(self.startTime) ).split()#提取开始标准时间
-#        end=time.asctime( time.localtime(self.endTime) ).split()#提取结束标准时间
-#
-#        e_hour=int(end[3][0:2])
-#        e.min=int(end[3][3:5])
-#        if e_min<30:min=30
-#        elif e_min>30:
-#            e_min=0
-#            e_hour+=1
-       # record.write('<wday:'+str(self.wday)+'date:'+str(self.year)+'-'+str(self.month)+'-'+str(self.day)+'detial:'+start[3]+'--'+end[3]+'time:'+str(overTime)+'remark:'+remark+'>')    #以@开头 &中断 ￥结尾之后用正则来匹配 
        #判断是否双休加班，和是否。。。。。
         if self.wday<=4 and overTime>=3.0:food=20
         else : food=0
@@ -261,7 +286,9 @@ class date:
         record.close()
         return str(overTime)
     def makeExcel(self, fileName, openfilName):
-        #初始化数组 week是星期几 date是日期 startend是开始结束时间 time是加班时间 money是选择周末拿钱 rest是周末调休 fighter是奋斗者 remark是加班事宜
+        '''
+		初始化数组 week是星期几 date是日期 startend是开始结束时间 time是加班时间 money是选择周末拿钱 rest是周末调休 fighter是奋斗者 remark是加班事宜
+        '''
         week=[]
         date=[]
         start=[]
@@ -280,48 +307,30 @@ class date:
             text=record.read() 
             pattern=re.compile(r'<wday:(\d)date:(.*?)start:(.*?)end:(.*?)time:(.*?)money:(.*?)food:(.*?)rest:(.*?)fighter:(.*?)remark:(.*?)id:(.*?)name:(.*?)depart:(.*?)>',re.S)
             items=re.findall(pattern, text)
-            # print(items)
             l=len(items)  #有多少条记录
         #接下来存week\date\time\remark,进行排序
             for i in range(0, l):
                 date.append(items[i][1])
-                # week.append(items[i][0])
-                # start.append(items[i][2])
-                # end.append(items[i][3])
-                # time.append(items[i][4])
-                # money.append(items[i][5])
-                # food.append(items[i][6])
-                # rest.append(items[i][7])
-                # fighter.append(items[i][8])
-                # remark.append(items[i][9])
-                # id.append(items[i][10])
-                # name.append(items[i][11])
-                # depart.append(items[i][12])
-     #       print name
-        #写文件名
+
             nvs = zip(date, items)
             tict = dict((name, value) for name, value in nvs)
-            # print(tict)
             date.sort()
             sortItems=[]
-            # print(date)
             for i in date:
                 sortItems.append(tict[i])
-            # print(sortItems)
             for i in range(0, l):
-                week.append(items[i][0])
-                start.append(items[i][2])
-                end.append(items[i][3])
-                time.append(items[i][4])
-                money.append(items[i][5])
-                food.append(items[i][6])
-                rest.append(items[i][7])
-                fighter.append(items[i][8])
-                remark.append(items[i][9])
-                id.append(items[i][10])
-                name.append(items[i][11])
-                depart.append(items[i][12])
-#            name=fileName
+                week.append(sortItems[i][0])
+                start.append(sortItems[i][2])
+                end.append(sortItems[i][3])
+                time.append(sortItems[i][4])
+                money.append(sortItems[i][5])
+                food.append(sortItems[i][6])
+                rest.append(sortItems[i][7])
+                fighter.append(sortItems[i][8])
+                remark.append(sortItems[i][9])
+                id.append(sortItems[i][10])
+                name.append(sortItems[i][11])
+                depart.append(sortItems[i][12])
             output_xls.write_excel(fileName, week, date,start, end,  time, money, food, rest, fighter, remark, id, name, depart)
             return
         else: 
@@ -329,15 +338,12 @@ class date:
        
     def writeId(self, id):
         self.id=id
-      #  print id
         return
     def writeName(self, name):
         self.name=name
-       # print name
         return
     def writeDepart(self, depart):
         self.depart=depart
-       # print depart
         return
     #删除最后一行的函数
     def deleteLastLine(self):
@@ -349,12 +355,13 @@ class date:
         pattern=re.compile(r'<(.*?)>',re.S)
         content=re.findall(pattern,text)
         #替换
-        pattern = re.compile('<'+content[-1]+'>', re.S)
-        # print(content[-1])
-        text=re.sub(pattern,'',text)
-        # print(text)
+        try:
+            pattern = re.compile('<'+content[-1]+'>', re.S)
+            text=re.sub(pattern,'',text)
         #重写入
-        record = open(str(self.year) + '_' + str(self.month) + '.txt', 'w+')
-        record.write(text)
-        record.close()
-        return '<'+content[-1]+'>'  #返回被删的文字
+            record = open(str(self.year) + '_' + str(self.month) + '.txt', 'w+')
+            record.write(text)
+            record.close()
+            return '<'+content[-1]+'>'  #返回被删的文字
+        except:
+            return 'nodate'
