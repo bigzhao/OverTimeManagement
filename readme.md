@@ -14,9 +14,9 @@ language：python3
 * 根据加班记录生成xls文件
 
 Note:
-文件名 | 作用|
----|---|
-setup.py| 是用来在windows下打包，运用cx_Freeze打包
+文件名 | 作用 |
+---|--- 
+setup.py | 是用来在windows下打包，运用cx_Freeze打包
 static | 静态资源
 overtime.py | 主逻辑
 sample.xls | 输出xls文件的模板 不能删
